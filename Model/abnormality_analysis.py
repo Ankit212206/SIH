@@ -108,9 +108,7 @@ class MineHazardDetector:
         for i in range(len(self.sensor_names)):
             if sensor_errors[i] > self.threshold[i]:
                 condition = (
-                    "High"
-                    if current_reality[i] > current_prediction[i]
-                    else "Abnormal Drop in"
+                     "Abnormal in"
                 )
                 anomalies.append(f"{condition} {self.sensor_names[i]}")
 
