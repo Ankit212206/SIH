@@ -1,7 +1,8 @@
 
 ## AI-Powered Underground Mine Safety, Monitoring and Rescue System
 
-DeepGuard AI is a human-in-the-loop robotic mine safety and rescue system designed to reduce the exposure of rescue personnel to hazardous underground environments.
+
+ AI is a human-in-the-loop robotic mine safety and rescue system designed to reduce the exposure of rescue personnel to hazardous underground environments.
 
 The system combines a rugged ground rover, ESP32-based sensing and control, Raspberry Pi-based AI and computer vision, thermal sensing, Wi-Fi/TCP communication, LoRa backup communication, MongoDB telemetry storage, and a real-time monitoring dashboard.
 
@@ -25,13 +26,13 @@ Underground coal mines can contain dangerous and unpredictable conditions such a
 
 During a mine accident, rescue teams may have limited information about the conditions inside inaccessible or unstable areas. Sending human rescuers into an unknown hazardous environment for initial inspection can increase their risk.
 
-DeepGuard AI addresses this problem by using a robotic rover to perform remote reconnaissance and provide real-time environmental and visual information to rescue personnel.
+Ai addresses this problem by using a robotic rover to perform remote reconnaissance and provide real-time environmental and visual information to rescue personnel.
 
 ---
 
 ## 💡 Proposed Solution
 
-DeepGuard AI uses a rugged ground rover equipped with environmental sensors, cameras, thermal sensing, wireless communication, obstacle detection, and motor control.
+AI uses a rugged ground rover equipped with environmental sensors, cameras, thermal sensing, wireless communication, obstacle detection, and motor control.
 
 The rover continuously collects information from its surroundings and transmits telemetry to a surface control station.
 
@@ -240,7 +241,7 @@ LoRa is not intended for live video transmission.
 
 MongoDB is used for telemetry and system data.
 
-DeepGuard
+Project
 ├── telemetry_history
 ├── telemetry_latest
 ├── alerts
@@ -325,7 +326,7 @@ Thermal and RGB information are complementary sources of information and should 
 
 ##Communication System
 
-DeepGuard AI uses a redundant communication architecture consisting of:
+ AI uses a redundant communication architecture consisting of:
 ```text
                     ROVER
                       │
@@ -408,7 +409,7 @@ MongoDB is used to store rover telemetry, alerts, missions and commands.
 
 The recommended database structure is:
 ```text
-DeepGuard
+Project
 │
 ├── telemetry_history
 ├── telemetry_latest
