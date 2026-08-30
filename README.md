@@ -100,7 +100,9 @@ The system follows a **human-in-the-loop approach**, where AI assists the operat
 
 
 ```
-## Environmental Telemetry
+## 🌡️ Environmental Telemetry
+
+```text
 Environmental Sensors
         ↓
       ESP32
@@ -109,15 +111,15 @@ Environmental Sensors
         ↓
     Wi-Fi / TCP
         ↓
- Python Backend
+  Python Backend
         ↓
 Validation + Timestamp + Processing
         ↓
-      MongoDB
+     MongoDB
         ↓
  WebSocket / API
         ↓
-Real-Time Dashboard
+ Real-Time Dashboard
         ↓
  Rescue Operator
 
