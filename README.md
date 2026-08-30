@@ -262,3 +262,285 @@ Delete 1
 The deleted reading remains available in telemetry_history.
 
 ```
+
+##Computer Vision
+
+The computer vision subsystem uses:
+
+OpenCV
+YOLO
+RGB camera
+Night-vision camera
+Thermal sensing where available
+
+The system can assist in detecting:
+
+Workers
+People
+Relevant objects
+Potential rescue targets
+
+YOLO model files are stored under:
+```text
+CV/
+├── best.pt
+└── yolov10n.pt
+```
+The computer vision system provides additional situational awareness to the rescue operator.
+
+
+
+##Thermal Worker Detection
+
+Thermal sensing provides an additional method of detecting people in difficult visual conditions.
+
+It can be useful in:
+
+Darkness
+Poor visibility
+Smoke
+Dust
+Low-light environments
+
+The proposed RGB + thermal approach is:
+```text
+
+RGB Camera
+     │
+     ├──────────────┐
+     │              │
+     ▼              ▼
+Visual Detection   Thermal Detection
+     │              │
+     └──────┬───────┘
+            ▼
+      Decision Support
+            │
+            ▼
+      Rescue Operator
+```
+Thermal and RGB information are complementary sources of information and should not be treated as absolute confirmation.
+
+
+
+##Communication System
+
+DeepGuard AI uses a redundant communication architecture consisting of:
+```text
+                    ROVER
+                      │
+             ┌────────┴────────┐
+             │                 │
+             ▼                 ▼
+          Wi-Fi/TCP           LoRa
+           Primary           Backup
+             │                 │
+             └────────┬────────┘
+                      ▼
+                Surface System
+```
+Wi-Fi / TCP
+
+Wi-Fi/TCP is the primary communication channel for:
+
+Continuous telemetry
+Rover control
+Higher-bandwidth information
+Communication between ESP32 and laptop
+
+The ESP32 acts as the TCP client.
+
+The laptop acts as the TCP server.
+
+
+
+##Bidirectional Communication
+
+The TCP connection can be used in both directions.
+
+ESP32 → Laptop
+```text
+
+The ESP32 sends telemetry:
+{
+  "type": "telemetry",
+  "rover_id": "DG01",
+  "packet_id": 16,
+  "temperature": 31.4,
+  "humidity": 52,
+  "methane": 42,
+  "battery": 87
+}
+```
+Laptop → ESP32
+```
+The laptop can send commands:
+{
+  "type": "command",
+  "command": "STOP"
+}
+```
+Movement command:
+```text
+
+{
+  "type": "command",
+  "command": "MOVE",
+  "direction": "FORWARD",
+  "speed": 100
+}
+```
+Possible commands include:
+```text
+FORWARD
+BACKWARD
+LEFT
+RIGHT
+STOP
+```
+An emergency stop/override should remain available independently of AI decisions.
+
+
+
+##MongoDB Database
+
+MongoDB is used to store rover telemetry, alerts, missions and commands.
+
+The recommended database structure is:
+```text
+DeepGuard
+│
+├── telemetry_history
+├── telemetry_latest
+├── alerts
+├── missions
+└── commands
+```
+
+
+##Latest 15 Telemetry Readings
+
+A separate telemetry_latest collection maintains only the latest 15 telemetry readings for fast dashboard visualization.
+
+```text
+Reading 1
+→ [1]
+
+Reading 2
+→ [1,2]
+
+...
+
+Reading 15
+→ [1,2,3,...,15]
+
+Reading 16 arrives
+→ Delete reading 1
+→ Insert reading 16
+
+Result:
+[2,3,4,...,15,16]
+```
+The old telemetry should only be removed from telemetry_latest.
+
+It remains stored in: telemetry_history
+
+This allows the dashboard to work with a small recent-data window without losing historical mission data.
+
+
+
+##Real-Time Dashboard
+
+The dashboard provides the rescue operator with a centralized view of the rover.
+
+Environmental Information
+```text
+
+Temperature
+Humidity
+Gas levels
+CO₂
+Dust
+```
+AI Information
+```text
+SAFE / HAZARD status
+Environmental anomaly information
+AI detection results
+```
+Vision
+```text
+RGB video
+Night-vision video
+Worker detection
+Thermal information
+```
+Rover Status
+```text
+Battery
+Communication status
+Mission status
+```
+Telemetry
+```text
+Latest 15 readings
+Sensor trends
+Historical information
+```
+Control
+```text
+Forward
+Backward
+Left
+Right
+Stop
+Emergency stop
+```
+
+
+##Project Structure
+```text
+SIH-main/
+│
+├── CV/
+│   ├── best.pt
+│   ├── yolov10n.pt
+│   ├── main.ipynb
+│   └── maine.ipynb
+│
+├── Model/
+│   ├── abnormality_analysis.py
+│   ├── model.keras.zip
+│   ├── scaler.joblib
+│   └── threshold.joblib
+│
+├── src/
+│   ├── rover/
+│   │   └── rover_main.cpp
+│   │
+│   ├── receiver/
+│   │   └── receiver_main.cpp
+│   │
+│   └── sih/
+│       └── __init__.py
+│
+├── static/
+│   ├── script.js
+│   └── style.css
+│
+├── templates/
+│   └── index.html
+│
+├── main.py
+├── dbReceive.py
+├── sender.py
+├── rec.py
+├── receiver.py
+├── sockreceive.py
+├── tempCodeRunnerFile.py
+├── platformio.ini
+├── pyproject.toml
+├── requirment.txt
+├── uv.lock
+└── README.md
+```
