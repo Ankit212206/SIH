@@ -1,0 +1,87 @@
+
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <ArduinoJson.h>
+#include <WiFi.h>
+#include <esp_now.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define OLED_SDA 5
+#define OLED_SCL 6
+#define STATUS_LED_PIN 7
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+volatile bool newData = false;
+char payloadBuffer[256];
+int totalPackets = 0;
+
+// =======================================================
+// OLDER ESP-NOW CALLBACK (Fixes the PlatformIO Error 1)
+// =======================================================
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+  memset(payloadBuffer, 0, sizeof(payloadBuffer));
+  memcpy(payloadBuffer, incomingData, len);
+  newData = true;
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+  
+  display.clearDisplay(); display.setTextSize(1); display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 10); display.println("WIFI BASE STATION");
+  display.drawLine(0, 22, 128, 22, SSD1306_WHITE);
+  display.setCursor(0, 30); display.println("Listening (ESP-NOW)");
+  display.display();
+
+  // Initialize ESP-NOW (No router connection needed)
+  WiFi.mode(WIFI_STA);
+  esp_now_init();
+  esp_now_register_recv_cb(OnDataRecv);
+
+  Serial.println("EMERGENCY WIFI RECEIVER ONLINE (WALKIE-TALKIE MODE)");
+}
+
+void loop() {
+  if (newData) {
+    newData = false;
+    totalPackets++;
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    
+    String payload = String(payloadBuffer);
+    Serial.println("\n----------------------------------------------------------");
+    Serial.printf(">>> [WIFI RX #%d] Received: %s\n", totalPackets, payload.c_str());
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, payload);
+
+    if (!error) {
+      int pkt = doc["pkt"] | totalPackets;
+      float temp = doc["temp"] | 0.0f; float hum = doc["hum"] | 0.0f;
+      int smoke = doc["smoke"] | 0;
+      float ax = doc["ax"] | 0.0f; float ay = doc["ay"] | 0.0f; float az = doc["az"] | 0.0f;
+      long d0 = doc["scan"][0] | -1; long d45 = doc["scan"][1] | -1;
+      long d90 = doc["scan"][2] | -1; long d135 = doc["scan"][3] | -1; long d180 = doc["scan"][4] | -1;
+
+      // Update OLED
+      display.clearDisplay();
+      display.setCursor(0, 0); display.printf("RX #%d | T:%.0fC H:%.0f%%", pkt, temp, hum);
+      display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
+      display.setCursor(0, 14); display.printf("Gas:%d | Z:%.1f", smoke, az);
+      display.setCursor(0, 26); display.printf("Fwd(90): %ld cm", d90);
+      display.setCursor(0, 38); display.printf("L:%ld | R:%ld cm", d180, d0);
+      display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
+      display.setCursor(0, 55); display.println("STATUS: LINK ACTIVE");
+      display.display();
+    }
+    digitalWrite(STATUS_LED_PIN, LOW);
+  }
+}

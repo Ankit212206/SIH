@@ -1,0 +1,104 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <DHT.h>
+#include <ESP32Servo.h>
+
+// Pin Definitions
+#define MPU_SDA 4
+#define MPU_SCL 5
+
+#define DHTPIN 6
+#define DHTTYPE DHT11
+
+#define SMOKE_PIN 1
+
+#define SERVO_PIN 7
+#define TRIG_PIN 8
+#define ECHO_PIN 9
+
+#define LED_PIN 2
+
+Adafruit_MPU6050 mpu;
+DHT dht(DHTPIN, DHTTYPE);
+Servo scanServo;
+
+long readDistance() {
+  digitalWrite(TRIG_PIN, LOW);
+  delayMicroseconds(2);
+  digitalWrite(TRIG_PIN, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(TRIG_PIN, LOW);
+  long duration = pulseIn(ECHO_PIN, HIGH, 25000);
+  if (duration == 0) return -1;
+  return (duration * 0.0343) / 2;
+}
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500);
+
+  pinMode(LED_PIN, OUTPUT);
+  pinMode(SMOKE_PIN, INPUT);
+  pinMode(TRIG_PIN, OUTPUT);
+  pinMode(ECHO_PIN, INPUT);
+
+  for (int i = 0; i < 3; i++) {
+    digitalWrite(LED_PIN, HIGH);
+    delay(100);
+    digitalWrite(LED_PIN, LOW);
+    delay(100);
+  }
+
+  Serial.println("\n--- ROVER HARDWARE DIAGNOSTIC TEST ---");
+
+  Wire.begin(MPU_SDA, MPU_SCL);
+  if (!mpu.begin()) {
+    Serial.println("[FAIL] MPU-6050 not detected. Check SDA(4)/SCL(5) and 3.3V.");
+  } else {
+    Serial.println("[OK] MPU-6050 Initialized.");
+    mpu.setAccelerometerRange(MPU6050_RANGE_8_G);
+  }
+
+  dht.begin();
+  Serial.println("[OK] DHT11 Initialized.");
+
+  scanServo.setPeriodHertz(50);
+  scanServo.attach(SERVO_PIN, 500, 2400);
+  scanServo.write(90);
+  Serial.println("[OK] Servo Centered at 90 deg.");
+}
+
+void loop() {
+  Serial.println("\n================ READINGS ================");
+
+  sensors_event_t a, g, temp;
+  mpu.getEvent(&a, &g, &temp);
+  Serial.printf("Accel [m/s^2]: X=%.2f | Y=%.2f | Z=%.2f\n", a.acceleration.x, a.acceleration.y, a.acceleration.z);
+
+  float h = dht.readHumidity();
+  float t = dht.readTemperature();
+  if (isnan(h) || isnan(t)) {
+    Serial.println("DHT11: Read error (Check GPIO 6 and 3.3V)");
+  } else {
+    Serial.printf("DHT11: Temp=%.1f C | Humidity=%.1f %%\n", t, h);
+  }
+
+  int smoke = analogRead(SMOKE_PIN);
+  Serial.printf("Smoke Sensor ADC (GPIO 1): %d\n", smoke);
+
+  int angles[] = {0, 90, 180};
+  for (int i = 0; i < 3; i++) {
+    scanServo.write(angles[i]);
+    delay(200);
+    long dist = readDistance();
+    Serial.printf("Sonar Scan @ %d deg: %ld cm\n", angles[i], dist);
+  }
+
+  digitalWrite(LED_PIN, HIGH);
+  delay(100);
+  digitalWrite(LED_PIN, LOW);
+
+  delay(1500);
+}

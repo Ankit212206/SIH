@@ -1,0 +1,152 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+#include <ArduinoJson.h>
+#include <WiFi.h>
+#include <esp_now.h>
+#include <esp_wifi.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+#define OLED_SDA 5
+#define OLED_SCL 6
+#define STATUS_LED_PIN 7
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+// =======================================================
+// WIFI ROUTER & LAPTOP TCP SETTINGS
+// =======================================================
+const char* ssid = "KARTHIK-PC";
+const char* password = "12345678";
+
+const char* hostIP = "192.168.137.229";
+const uint16_t hostPort = 5000;
+
+WiFiClient tcpClient;
+volatile bool newData = false;
+char payloadBuffer[256];
+int totalPackets = 0;
+
+void OnDataRecv(const uint8_t *mac_addr, const uint8_t *incomingData, int len) {
+  memset(payloadBuffer, 0, sizeof(payloadBuffer));
+  memcpy(payloadBuffer, incomingData, len);
+  newData = true;
+}
+
+void setup() {
+  Serial.begin(115200);
+  pinMode(STATUS_LED_PIN, OUTPUT);
+
+  Wire.begin(OLED_SDA, OLED_SCL);
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) display.begin(SSD1306_SWITCHCAPVCC, 0x3D);
+
+  display.clearDisplay(); display.setTextSize(1); display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 10); display.println("CONNECTING WIFI...");
+  display.display();
+
+  // 1. Connect to standard Wi-Fi router network
+  WiFi.mode(WIFI_STA);
+  WiFi.begin(ssid, password);
+  
+  int attempts = 0;
+  while (WiFi.status() != WL_CONNECTED && attempts < 30) {
+    delay(500);
+    attempts++;
+  }
+
+  if (WiFi.status() != WL_CONNECTED) {
+    display.clearDisplay();
+    display.setCursor(0, 10); display.println("WIFI FAILED!");
+    display.display();
+    return;
+  }
+
+  // 2. Automatically grab the router's channel so ESP-NOW matches the Rover
+  int currentChannel = WiFi.channel();
+  esp_wifi_set_channel(currentChannel, WIFI_SECOND_CHAN_NONE);
+
+  display.clearDisplay();
+  display.setCursor(0, 10); display.println("WIFI: CONNECTED");
+  display.setCursor(0, 30); display.printf("CHANNEL: %d", currentChannel);
+  display.display();
+  delay(2000);
+
+  // 3. Initialize ESP-NOW
+  esp_now_init();
+  esp_now_register_recv_cb(OnDataRecv);
+
+  display.clearDisplay();
+  display.setCursor(0, 40); display.println("TCP: READY");
+  display.display();
+}
+
+void loop() {
+  if (newData) {
+    newData = false;
+    totalPackets++;
+    digitalWrite(STATUS_LED_PIN, HIGH);
+    
+    String payload = String(payloadBuffer);
+    
+    // Print raw packet to Serial Monitor
+    Serial.println("\n----------------------------------------------------------");
+    Serial.printf(">>> [ESP-NOW RX]  %s\n", payload.c_str());
+
+    JsonDocument doc;
+    DeserializationError error = deserializeJson(doc, payload);
+
+    if (!error) {
+      int pkt = doc["pkt"] | totalPackets;
+      float temp = doc["temp"] | 0.0f; 
+      float hum = doc["hum"] | 0.0f;
+      int smoke = doc["smoke"] | 0;
+      float az = doc["az"] | 0.0f;
+      long d0 = doc["scan"][0] | -1; 
+      long d90 = doc["scan"][2] | -1; 
+      long d180 = doc["scan"][4] | -1;
+
+      // --- PREPARE & SEND JSON TO PYTHON PC ---
+      JsonDocument dbDoc;
+      dbDoc["_id"] = pkt;
+      dbDoc["gas"] = smoke;
+      dbDoc["temp"] = temp;
+      dbDoc["humid"] = hum;
+
+      String dbJsonString;
+      serializeJson(dbDoc, dbJsonString);
+      dbJsonString += "\n";
+
+      if (!tcpClient.connected()) {
+        tcpClient.connect(hostIP, hostPort);
+      }
+      
+      if (tcpClient.connected()) {
+        tcpClient.print(dbJsonString);
+        Serial.printf("<<< [TCP DB OUT]  %s", dbJsonString.c_str());
+      } else {
+        Serial.println("<<< [TCP ERROR]   Python server offline!");
+      }
+      Serial.println("----------------------------------------------------------");
+
+      // --- UPDATE OLED DASHBOARD ---
+      display.clearDisplay();
+      display.setCursor(0, 0); display.printf("RX #%d | T:%.0fC H:%.0f%%", pkt, temp, hum);
+      display.drawLine(0, 9, 128, 9, SSD1306_WHITE);
+      display.setCursor(0, 14); display.printf("Gas:%d | Z:%.1f", smoke, az);
+      display.setCursor(0, 26); display.printf("Fwd(90): %ld cm", d90);
+      display.setCursor(0, 38); display.printf("L:%ld | R:%ld cm", d180, d0);
+      display.drawLine(0, 52, 128, 52, SSD1306_WHITE);
+      
+      if (tcpClient.connected()) {
+        display.setCursor(0, 55); display.println("STATUS: PC LINK [OK]");
+      } else {
+        display.setCursor(0, 55); display.println("STATUS: PC OFFLINE");
+      }
+      display.display();
+    }
+    digitalWrite(STATUS_LED_PIN, LOW);
+  }
+}

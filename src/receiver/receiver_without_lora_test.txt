@@ -1,0 +1,98 @@
+#include <Arduino.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+#define SCREEN_WIDTH 128
+#define SCREEN_HEIGHT 64
+#define OLED_RESET -1
+
+// Base Pinout (from your diagram)
+#define OLED_SDA 5
+#define OLED_SCL 6
+#define STATUS_LED_PIN 7
+
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+int counter = 0;
+
+void setup() {
+  Serial.begin(115200);
+  delay(1500); // Allow USB Serial to connect
+
+  pinMode(STATUS_LED_PIN, OUTPUT);
+  digitalWrite(STATUS_LED_PIN, LOW);
+
+  Serial.println("\n=== BASE STATION HARDWARE TEST (NO LORA) ===");
+
+  // Initialize I2C on GPIO 5 (SDA) and GPIO 6 (SCL)
+  Wire.begin(OLED_SDA, OLED_SCL);
+
+  // Scan I2C to confirm OLED wiring
+  byte count = 0;
+  for (byte address = 1; address < 127; address++) {
+    Wire.beginTransmission(address);
+    if (Wire.endTransmission() == 0) {
+      Serial.printf("[FOUND] I2C device at: 0x%02X\n", address);
+      count++;
+    }
+  }
+  if (count == 0) {
+    Serial.println("[ERROR] No I2C device detected! Check SDA(5) and SCL(6).");
+  }
+
+  // Initialize OLED (Check 0x3C and 0x3D)
+  if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3D)) {
+      Serial.println("[FAIL] SSD1306 allocation failed.");
+    }
+  }
+
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(15, 25);
+  display.println("DIAGNOSTIC TEST");
+  display.display();
+  delay(1000);
+}
+
+void loop() {
+  counter++;
+
+  // 1. Blink the Blue Status LED on GPIO 7
+  digitalWrite(STATUS_LED_PIN, HIGH);
+  delay(200);
+  digitalWrite(STATUS_LED_PIN, LOW);
+
+  // 2. Update OLED Display
+  display.clearDisplay();
+  
+  // Header bar
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.println("BASE STATION TEST");
+  display.drawLine(0, 10, 128, 10, SSD1306_WHITE);
+
+  // Status lines
+  display.setCursor(0, 18);
+  display.println("OLED: OK (GPIO 5,6)");
+
+  display.setCursor(0, 32);
+  display.println("LED 7: BLINKING");
+
+  display.setCursor(0, 48);
+  display.printf("Heartbeat: %d", counter);
+
+  // Small progress bar indicator
+  display.drawRect(0, 58, 128, 6, SSD1306_WHITE);
+  display.fillRect(2, 60, (counter % 60) * 2, 2, SSD1306_WHITE);
+
+  display.display();
+
+  // 3. Serial Print Log
+  Serial.printf("[TEST HEARTBEAT] Tick: %d | LED on GPIO 7 toggled\n", counter);
+
+  delay(800);
+}
