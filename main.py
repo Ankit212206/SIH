@@ -107,13 +107,13 @@ def get_data():
         
         # Feed the 15 chronological readings into the sliding window
         for doc in docs:
-            temp = doc.get('temp', doc.get('Temp', 0))
-            humi = doc.get('humi', doc.get('Humi', 0))
-            gas = doc.get('gas', 0)
-            dust = doc.get('dust', 0)
+            temp = doc.get('temp', doc.get('Temp', 30))
+            humid = doc.get('humid', doc.get('Humid', 40))
+            gas = doc.get('gas', 700)
+            dust = doc.get('dust', 650)
             
             # Format: [CO2, Dust, Temp, Humidity] matching your detector script
-            reading = [gas, dust, temp, humi]
+            reading = [gas, dust, temp, humid]
             hazard_result = hazard_detector.process_reading(reading)
             
         # Append YOLO counts
