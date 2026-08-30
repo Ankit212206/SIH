@@ -3,9 +3,11 @@ from pymongo import MongoClient
 from ultralytics import YOLO
 import numpy as np
 import os
+import sys
+import subprocess
 import cv2
 
-# Import your custom hazard detector
+# Import hazard detector
 from Model.abnormality_analysis import MineHazardDetector
 
 current_dir = os.path.abspath(os.path.dirname(__file__))
@@ -135,5 +137,22 @@ def get_data():
         return jsonify({"error": "Failed to fetch data"}), 500
 
 if __name__ == '__main__':
-    print("Web server running at http://127.0.0.1:8080")
-    app.run(host='0.0.0.0', port=8080, debug=True)
+    # --- Auto-launch dbReceive.py in background ---
+    db_receive_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dbReceive.py')
+    print("[*] Starting dbReceive.py (USB Serial listener)...")
+    db_process = subprocess.Popen(
+        [sys.executable, db_receive_path],
+        stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT,
+        text=True
+    )
+    print(f"[*] dbReceive.py started with PID: {db_process.pid}")
+
+    try:
+        print("Web server running at http://127.0.0.1:8080")
+        app.run(host='0.0.0.0', port=8080, debug=True)
+    finally:
+        # Cleanly terminate the dbReceive process when Flask shuts down
+        print("[*] Shutting down dbReceive.py...")
+        db_process.terminate()
+        db_process.wait()
