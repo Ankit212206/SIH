@@ -1,3 +1,4 @@
+let targetAlreadyAnnounced = false;
 async function fetchDatabaseData() {
     try {
         const response = await fetch('/api/data');
@@ -50,6 +51,14 @@ async function fetchDatabaseData() {
         
         if (data.persons > 0 || data.miners > 0) {
             visionText += "<div style='color: #00ff00; margin-bottom: 5px; text-shadow: 0 0 5px #00ff00;'>[!] PERSON DETECTED</div>";
+            if (!targetAlreadyAnnounced) {
+                let speech = new SpeechSynthesisUtterance("Person detected");
+                speech.rate = 1.1; // Slightly faster, tactical voice pace
+                speech.pitch = 1.0;
+                window.speechSynthesis.speak(speech);
+                
+                 // Lock the audio from repeating
+            }
         }
         
         const visionOutput = document.getElementById('vision-output');
