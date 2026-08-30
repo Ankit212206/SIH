@@ -140,17 +140,17 @@ if __name__ == '__main__':
     db_receive_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dbReceive.py')
     print("[*] Starting (USB Serial listener)...")
     db_process = subprocess.Popen(
-        [sys.executable, db_receive_path],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT,
-        text=True
+        [sys.executable, db_receive_path]
     )
     print(f"[*] dbReceive.py started with PID: {db_process.pid}")
 
     try:
         print("Web server running at http://127.0.0.1:8080")
-        app.run(host='0.0.0.0', port=8080, debug=True)
+        # Flask's debug reloader starts this module twice.  Disable it so the
+        # serial listener is launched once and is not immediately terminated.
+        app.run(host='0.0.0.0', port=8080, debug=True, use_reloader=False)
     finally:
         print("[*] Shutting down dbReceive.py...")
-        db_process.terminate()
-        db_process.wait()
+        if db_process.poll() is None:
+            db_process.terminate()
+            db_process.wait()

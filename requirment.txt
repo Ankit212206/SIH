@@ -11,3 +11,4 @@ pymongo
 ultralytics 
 opencv-python 
 scikit-learn
+pyserial
