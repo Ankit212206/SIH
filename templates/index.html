@@ -5,8 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Rover Telemetry Interface</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-    <!-- Using ?v=6 to ensure the browser fetches the latest version of your CSS -->
-    <link rel="stylesheet" href="/static/style.css?v=6">
+    <link rel="stylesheet" href="/static/style.css?v=8">
 </head>
 <body>
     <div class="rover-container">
@@ -20,7 +19,6 @@
             
             <img src="/video_feed" alt="Rover Camera Feed" class="camera-feed" id="camera-stream">
 
-            <!-- Telemetry Zone -->
             <div class="hud-top-left">
                 <div class="telemetry-line">
                     <span class="telemetry-label">TEMP:</span>
@@ -46,30 +44,25 @@
 
             <div class="crosshair"></div>
 
-            <!-- AI Diagnostics Zone -->
+            <!-- UPDATED: AI Diagnostics Zone -->
             <div class="hud-bottom-left">
                 <div class="box-title-amber"><i class="fas fa-microchip"></i> AI DIAGNOSTICS</div>
-                <div class="box-content" id="ai-output" style="font-size: 1.1rem; padding-top: 5px;">
-                    <div style="margin-bottom: 5px; color: #8faebf;">
-                        PERSONS: <span id="person-count" style="color: #00ff00; font-weight: bold; padding-left: 10px;">0</span>
-                    </div>
-                    <div style="color: #8faebf;">
-                        MINERS: <span id="miner-count" style="color: #ffaa00; font-weight: bold; padding-left: 18px;">0</span>
-                    </div>
+                <div class="box-content" id="ai-output" style="font-size: 0.9rem; padding-top: 5px;">
+                    <div id="hazard-status" style="color: #00ffcc; font-weight: bold; margin-bottom: 5px;">[SYSTEM OK]</div>
+                    <div id="hazard-anomalies" style="color: #ff3333; display: none; line-height: 1.5;"></div>
                 </div>
             </div>
 
             <div class="hud-bottom-right">
                 <div class="box-title-cyan">VISION TRACKING <i class="fas fa-eye"></i></div>
-                <div class="box-content" id="vision-output">
-                    [STANDBY] Awaiting target data.
+                <div class="box-content" id="vision-output" style="font-size: 1.05rem; padding-top: 5px;">
+                    [STANDBY] No targets detected in frame.
                 </div>
             </div>
 
         </div>
     </div>
 
-    <!-- Using ?v=6 to ensure the browser fetches the latest version of your JS -->
-    <script src="/static/script.js?v=6"></script>
+    <script src="/static/script.js?v=8"></script>
 </body>
 </html>
