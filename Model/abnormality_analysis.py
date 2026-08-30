@@ -2,6 +2,7 @@ import collections
 import os
 import joblib
 import numpy as np
+import warnings
 from pykalman import KalmanFilter
 os.environ["TF_CPP_MIN_LOG_LEVEL"] = "3"
 os.environ["TF_ENABLE_ONEDNN_OPTS"] = "0"
@@ -12,7 +13,7 @@ import json
 import tempfile
 import zipfile
 
-import warnings
+
 
 class MineHazardDetector:
 
@@ -130,9 +131,9 @@ class MineHazardDetector:
 
 if __name__ == "__main__":
     detector = MineHazardDetector(
-    model_path="C:\\mineppl\\model.keras",
-    scaler_path="C:\\mineppl\\scaler.joblib",
-    threshold_path="C:\\mineppl\\threshold.joblib",
+    model_path=r"Model/model.keras.zip",
+    scaler_path=r"Model/scaler.joblib",
+    threshold_path=r"Model/threshold.joblib",
     window_size=15,
     )
     data = [
