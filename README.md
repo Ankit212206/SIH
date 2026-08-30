@@ -4,7 +4,7 @@
 
  AI is a human-in-the-loop robotic mine safety and rescue system designed to reduce the exposure of rescue personnel to hazardous underground environments.
 
-The system combines a rugged ground rover, ESP32-based sensing and control, Raspberry Pi-based AI and computer vision, thermal sensing, Wi-Fi/TCP communication, LoRa backup communication, MongoDB telemetry storage, and a real-time monitoring dashboard.
+The system combines a rugged ground rover, ESP32-based sensing and control, Raspberry Pi-based AI and computer vision, low light sensing, Wi-Fi/TCP communication, LoRa backup communication, MongoDB telemetry storage, and a real-time monitoring dashboard.
 
 > **Sense. Analyze. Locate. Rescue.**
 
@@ -32,7 +32,7 @@ Ai addresses this problem by using a robotic rover to perform remote reconnaissa
 
 ## 💡 Proposed Solution
 
-AI uses a rugged ground rover equipped with environmental sensors, cameras, thermal sensing, wireless communication, obstacle detection, and motor control.
+AI uses a rugged ground rover equipped with environmental sensors, cameras, low light sensing, wireless communication, obstacle detection, and motor control.
 
 The rover continuously collects information from its surroundings and transmits telemetry to a surface control station.
 
@@ -64,7 +64,7 @@ The system follows a **human-in-the-loop approach**, where AI assists the operat
                        │     Sensors     │
                        │     Motors      │
                        │     Camera      │
-                       │     Thermal     │
+                       │     low light     │
                        └────────┬────────┘
                                 │
                     ┌───────────┴───────────┐
@@ -141,14 +141,14 @@ RGB / Night-Vision Camera
 
 ```
 
-##Thermal Detection
+##low light Detection
 
 ```text
 
 
-Thermal Camera / Sensor
+low light Camera / Sensor
           ↓
-   Thermal Processing
+   low light Processing
           ↓
 Possible Human Heat Signature
           ↓
@@ -272,7 +272,7 @@ OpenCV
 YOLO
 RGB camera
 Night-vision camera
-Thermal sensing where available
+low light sensing where available
 
 The system can assist in detecting:
 
@@ -291,9 +291,9 @@ The computer vision system provides additional situational awareness to the resc
 
 
 
-##Thermal Worker Detection
+##Low light Worker Detection
 
-Thermal sensing provides an additional method of detecting people in difficult visual conditions.
+Low light sensing provides an additional method of detecting people in difficult visual conditions.
 
 It can be useful in:
 
@@ -303,7 +303,7 @@ Smoke
 Dust
 Low-light environments
 
-The proposed RGB + thermal approach is:
+The proposed RGB + low light approach is:
 ```text
 
 RGB Camera
@@ -311,7 +311,7 @@ RGB Camera
      ├──────────────┐
      │              │
      ▼              ▼
-Visual Detection   Thermal Detection
+Visual Detection   low light Detection
      │              │
      └──────┬───────┘
             ▼
@@ -320,7 +320,7 @@ Visual Detection   Thermal Detection
             ▼
       Rescue Operator
 ```
-Thermal and RGB information are complementary sources of information and should not be treated as absolute confirmation.
+low light and RGB information are complementary sources of information and should not be treated as absolute confirmation.
 
 
 
@@ -474,7 +474,7 @@ Vision
 RGB video
 Night-vision video
 Worker detection
-Thermal information
+low light information
 ```
 Rover Status
 ```text
