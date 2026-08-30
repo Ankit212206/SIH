@@ -136,9 +136,12 @@ RGB / Night-Vision Camera
           ↓
     Alerts / Dashboard
 
-
+```
 
 ##Thermal Detection
+
+```text
+
 
 Thermal Camera / Sensor
           ↓
@@ -168,9 +171,11 @@ Rescue Operator
        ↓
       Rover
 
-
+```
 
 ##AI/ML Pipeline
+```text
+
 
 The environmental AI system uses CO₂, dust, temperature and humidity.
 
@@ -193,9 +198,10 @@ SAFE / HAZARD
 AI is used as decision support and does not replace human decisions during rescue operations.
 
 
-
+```
 ##Communication
 Wi-Fi / TCP
+```text
 
 Wi-Fi/TCP is the primary communication channel for continuous telemetry and rover control.
 
@@ -226,8 +232,9 @@ Emergency messages
 
 LoRa is not intended for live video transmission.
 
-
+```
 ##MongoDB
+```text
 
 MongoDB is used for telemetry and system data.
 
@@ -251,3 +258,5 @@ Delete 1
 [2,3,4,...,16]
 
 The deleted reading remains available in telemetry_history.
+
+```
