@@ -99,7 +99,7 @@ The system follows a **human-in-the-loop approach**, where AI assists the operat
                               ROVER
 
 
-```text
+```
 ## Environmental Telemetry
 Environmental Sensors
         ↓
