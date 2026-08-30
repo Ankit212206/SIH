@@ -165,3 +165,87 @@ Rescue Operator
      Motors
        ↓
       Rover
+
+
+
+##AI/ML Pipeline
+
+The environmental AI system uses CO₂, dust, temperature and humidity.
+
+Sensor Data
+    ↓
+15-Reading Window
+    ↓
+Kalman Filter
+    ↓
+Scaling
+    ↓
+Keras Model
+    ↓
+MSE / Reconstruction Error
+    ↓
+Threshold
+    ↓
+SAFE / HAZARD
+
+AI is used as decision support and does not replace human decisions during rescue operations.
+
+
+
+##Communication
+Wi-Fi / TCP
+
+Wi-Fi/TCP is the primary communication channel for continuous telemetry and rover control.
+
+ESP32 ←──── TCP Connection ────→ Laptop
+
+Telemetry is sent as newline-delimited JSON.
+
+Example:
+
+{
+  "type": "telemetry",
+  "rover_id": "DG01",
+  "packet_id": 16,
+  "temperature": 31.4,
+  "humidity": 52,
+  "co2": 700,
+  "dust": 35,
+  "battery": 87
+}
+
+
+
+LoRa acts as a low-bandwidth backup channel for critical information such as:
+Hazard alerts
+Gas warnings
+Battery status
+Emergency messages
+
+LoRa is not intended for live video transmission.
+
+
+##MongoDB
+
+MongoDB is used for telemetry and system data.
+
+DeepGuard
+├── telemetry_history
+├── telemetry_latest
+├── alerts
+├── missions
+└── commands
+
+telemetry_history stores complete historical data.
+
+telemetry_latest maintains only the latest 15 readings for fast dashboard access.
+
+[1,2,3,...,15]
+
+16 arrives
+↓
+Delete 1
+↓
+[2,3,4,...,16]
+
+The deleted reading remains available in telemetry_history.
