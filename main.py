@@ -18,8 +18,8 @@ app = Flask(__name__, template_folder=template_dir, static_folder=static_dir)
 # --- MongoDB Setup ---
 MONGO_URI = "mongodb://localhost:27017/"
 client = MongoClient(MONGO_URI)
-db = client['SIH']
-collection = db['data']
+db = client['NASA']
+collection = db['astronauts']
 
 # --- AI Models Setup ---
 print("Loading YOLO models...")
@@ -137,9 +137,8 @@ def get_data():
         return jsonify({"error": "Failed to fetch data"}), 500
 
 if __name__ == '__main__':
-    # --- Auto-launch dbReceive.py in background ---
     db_receive_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'dbReceive.py')
-    print("[*] Starting dbReceive.py (USB Serial listener)...")
+    print("[*] Starting (USB Serial listener)...")
     db_process = subprocess.Popen(
         [sys.executable, db_receive_path],
         stdout=subprocess.PIPE,
@@ -152,7 +151,6 @@ if __name__ == '__main__':
         print("Web server running at http://127.0.0.1:8080")
         app.run(host='0.0.0.0', port=8080, debug=True)
     finally:
-        # Cleanly terminate the dbReceive process when Flask shuts down
         print("[*] Shutting down dbReceive.py...")
         db_process.terminate()
         db_process.wait()
