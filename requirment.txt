@@ -1,0 +1,12 @@
+pandas
+numpy
+pykalman
+joblib
+tensorflow
+pyaudio
+elevenlabs
+scapy
+flask 
+pymongo 
+ultralytics 
+opencv-python 

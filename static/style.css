@@ -1,0 +1,80 @@
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
+
+body { 
+    background-color: #050914; 
+    font-family: 'Share Tech Mono', monospace;
+    color: #00ffcc; 
+    margin: 0;
+    padding: 20px;
+}
+
+.rover-container { max-width: 1400px; margin: 0 auto; }
+
+.dashboard-header {
+    display: flex; justify-content: space-between; align-items: center;
+    border-bottom: 1px solid #00ffcc; padding-bottom: 10px;
+    margin-bottom: 20px; text-transform: uppercase; letter-spacing: 2px;
+}
+
+.title-glow {
+    text-shadow: 0 0 10px rgba(0, 255, 204, 0.5); font-size: 1.5rem;
+}
+
+.monitor-wrapper {
+    position: relative; width: 100%; border: 2px solid #1a2a42;
+    border-radius: 8px; overflow: hidden; background: #000;
+    box-shadow: 0 0 30px rgba(0, 255, 204, 0.1);
+}
+
+.camera-feed {
+    width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; opacity: 0.9; 
+}
+
+/* Top-Left: Live Telemetry */
+.hud-top-left {
+    position: absolute; top: 20px; left: 20px; z-index: 10;
+    background: rgba(0, 15, 25, 0.75); border: 1px solid rgba(0, 255, 204, 0.4);
+    padding: 15px; border-radius: 4px; backdrop-filter: blur(3px);
+    min-width: 220px; box-shadow: 0 0 15px rgba(0, 255, 204, 0.1);
+}
+
+.telemetry-line {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; font-size: 1.1rem;
+    border-bottom: 1px dashed rgba(0, 255, 204, 0.2); padding-bottom: 4px;
+}
+.telemetry-line:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+.telemetry-label { color: #6c8b99; }
+.telemetry-value { font-weight: bold; color: #00ffcc; text-shadow: 0 0 8px rgba(0, 255, 204, 0.4); }
+
+/* Top-Right: Recording Status */
+.hud-top-right { position: absolute; top: 20px; right: 20px; z-index: 10; }
+.rec-indicator {
+    color: #ff3333; font-weight: bold; text-shadow: 0 0 10px #ff3333;
+    animation: blink 1s infinite; background: rgba(0,0,0,0.6);
+    padding: 5px 12px; border-radius: 4px; border: 1px solid #ff3333;
+}
+
+/* Bottom-Left & Bottom-Right Boxes */
+.hud-bottom-left, .hud-bottom-right {
+    position: absolute; bottom: 20px; z-index: 10; width: 320px; height: 120px;
+    background: rgba(0, 15, 25, 0.75); padding: 12px; border-radius: 4px; backdrop-filter: blur(3px);
+}
+.hud-bottom-left {
+    left: 20px; border: 1px solid rgba(255, 170, 0, 0.5); border-left: 4px solid #ffaa00;
+}
+.hud-bottom-right {
+    right: 20px; border: 1px solid rgba(0, 255, 204, 0.4); border-right: 4px solid #00ffcc; text-align: right;
+}
+.box-title-amber { font-size: 0.85rem; color: #ffaa00; margin-bottom: 8px; text-transform: uppercase; }
+.box-title-cyan { font-size: 0.85rem; color: #00ffcc; margin-bottom: 8px; text-transform: uppercase; }
+.box-content { color: #8faebf; font-size: 0.9rem; line-height: 1.4; }
+
+.crosshair {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 40px; height: 40px; border: 1px solid rgba(0, 255, 204, 0.3); border-radius: 50%; pointer-events: none;
+}
+.crosshair::before { content: ''; position: absolute; top: 19px; left: -20px; width: 80px; height: 1px; background: rgba(0, 255, 204, 0.3); }
+.crosshair::after { content: ''; position: absolute; left: 19px; top: -20px; height: 80px; width: 1px; background: rgba(0, 255, 204, 0.3); }
+
+@keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
