@@ -122,9 +122,11 @@ Validation + Timestamp + Processing
  Real-Time Dashboard
         ↓
  Rescue Operator
-
+```
 
 ##Computer Vision
+```text
+
 
 RGB / Night-Vision Camera
           ↓
