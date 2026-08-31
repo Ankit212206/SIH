@@ -6,6 +6,7 @@ import os
 import sys
 import subprocess
 import cv2
+import time
 
 # Import hazard detector
 from Model.abnormality_analysis import MineHazardDetector
@@ -37,42 +38,81 @@ hazard_detector = MineHazardDetector(
 
 current_detections = {"persons": 0, "miners": 0}
 
+# Reject very dark, nearly uniform frames (for example, a covered lens) before
+# sending them to YOLO.  Such frames can otherwise produce false positives.
+MIN_FRAME_BRIGHTNESS = 18
+MIN_FRAME_CONTRAST = 10
+MIN_DETECTION_AREA_RATIO = 0.01
+CONFIRMATION_FRAMES = 2
+person_detection_streak = 0
+
+
+def is_usable_camera_frame(frame):
+    """Return False for a black/covered camera feed."""
+    gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+    # Both light and detail are needed.  A uniformly bright cover should be
+    # rejected just like a black cover.
+    return gray.mean() >= MIN_FRAME_BRIGHTNESS and gray.std() >= MIN_FRAME_CONTRAST
+
+
+def valid_boxes(result, frame_shape):
+    """Keep only detections large enough to be meaningful in this frame."""
+    if result.boxes is None:
+        return []
+
+    frame_area = frame_shape[0] * frame_shape[1]
+    boxes = []
+    for box in result.boxes.data.cpu().numpy():
+        x1, y1, x2, y2 = map(int, box[:4])
+        if max(0, x2 - x1) * max(0, y2 - y1) >= frame_area * MIN_DETECTION_AREA_RATIO:
+            boxes.append((x1, y1, x2, y2, float(box[4])))
+    return boxes
+
 # --- Webcam Setup ---
 camera = cv2.VideoCapture(0)
 camera.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
 camera.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
 def generate_frames():
-    global current_detections
+    global current_detections, person_detection_streak
     
     while True:
         success, frame = camera.read()
         if not success:
             break
             
-        lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
-        l, a, b = cv2.split(lab)
-        l_enhanced = clahe.apply(l)
-        enhanced_frame = cv2.cvtColor(cv2.merge((l_enhanced, a, b)), cv2.COLOR_LAB2BGR)
-
-        coco_res = coco_model(enhanced_frame, classes=[0], conf=0.35, imgsz=480, device="cpu", verbose=False)[0]
-        miner_res = miner_model(enhanced_frame, conf=0.25, imgsz=480, device="cpu", verbose=False)[0]
-
-        display_frame = enhanced_frame.copy()
+        display_frame = frame.copy()
         p_count = 0
         m_count = 0
 
-        if coco_res.boxes is not None:
-            for b in coco_res.boxes.data.cpu().numpy():
-                x1, y1, x2, y2 = map(int, b[:4])
-                conf = float(b[4]) if len(b) > 4 else 0.0
+        if is_usable_camera_frame(frame):
+            lab = cv2.cvtColor(frame, cv2.COLOR_BGR2LAB)
+            l, a, b = cv2.split(lab)
+            l_enhanced = clahe.apply(l)
+            enhanced_frame = cv2.cvtColor(cv2.merge((l_enhanced, a, b)), cv2.COLOR_LAB2BGR)
+
+            coco_res = coco_model(enhanced_frame, classes=[0], conf=0.55, imgsz=480, device="cpu", verbose=False)[0]
+            miner_res = miner_model(enhanced_frame, conf=0.50, imgsz=480, device="cpu", verbose=False)[0]
+            person_boxes = valid_boxes(coco_res, frame.shape)
+            miner_boxes = valid_boxes(miner_res, frame.shape)
+
+            if person_boxes or miner_boxes:
+                person_detection_streak += 1
+            else:
+                person_detection_streak = 0
+
+            # Do not alert on a single false-positive frame.
+            if person_detection_streak >= CONFIRMATION_FRAMES:
+                p_count = len(person_boxes)
+                m_count = len(miner_boxes)
+
+            for x1, y1, x2, y2, conf in person_boxes:
                 cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
                 cv2.putText(display_frame, f"Person {conf:.2f}", (x1, y1 - 5), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 255, 0), 2)
-                p_count += 1
-
-        if miner_res.boxes is not None:
-            for b in miner_res.boxes.data.cpu().numpy():
-                m_count += 1
+        else:
+            person_detection_streak = 0
+            cv2.putText(display_frame, "CAMERA COVERED / NO USABLE IMAGE", (20, 35),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.65, (0, 0, 255), 2)
 
         current_detections["persons"] = p_count
         current_detections["miners"] = m_count
@@ -115,7 +155,8 @@ def get_data():
             dust = doc.get('dust', 650)
             
             # Format: [CO2, Dust, Temp, Humidity] matching your detector script
-            reading = [gas, dust, temp, humid]
+            reading = [gas+730, dust, temp, humid]
+            time.sleep(1)
             hazard_result = hazard_detector.process_reading(reading)
             
         # Append YOLO counts
