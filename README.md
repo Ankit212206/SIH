@@ -125,7 +125,7 @@ Validation + Timestamp + Processing
  Rescue Operator
 ```
 
-##Computer Vision
+## Computer Vision
 ```text
 
 
@@ -141,7 +141,7 @@ RGB / Night-Vision Camera
 
 ```
 
-##low light Detection
+## low light Detection
 
 ```text
 
@@ -156,7 +156,7 @@ Possible Human Heat Signature
 
 
 
-##Rover Control
+## Rover Control
 
 Rescue Operator
        ↓
@@ -176,7 +176,7 @@ Rescue Operator
 
 ```
 
-##AI/ML Pipeline
+## AI/ML Pipeline
 ```text
 
 
@@ -202,7 +202,7 @@ AI is used as decision support and does not replace human decisions during rescu
 
 
 ```
-##Communication
+## Communication
 Wi-Fi / TCP
 ```text
 
@@ -236,7 +236,7 @@ Emergency messages
 LoRa is not intended for live video transmission.
 
 ```
-##MongoDB
+## MongoDB
 ```text
 
 MongoDB is used for telemetry and system data.
@@ -264,7 +264,7 @@ The deleted reading remains available in telemetry_history.
 
 ```
 
-##Computer Vision
+## Computer Vision
 
 The computer vision subsystem uses:
 
@@ -291,7 +291,7 @@ The computer vision system provides additional situational awareness to the resc
 
 
 
-##Low light Worker Detection
+## Low light Worker Detection
 
 Low light sensing provides an additional method of detecting people in difficult visual conditions.
 
@@ -324,7 +324,7 @@ low light and RGB information are complementary sources of information and shoul
 
 
 
-##Communication System
+## Communication System
 
  AI uses a redundant communication architecture consisting of:
 ```text
@@ -355,7 +355,7 @@ The laptop acts as the TCP server.
 
 
 
-##Bidirectional Communication
+## Bidirectional Communication
 
 The TCP connection can be used in both directions.
 
@@ -403,7 +403,7 @@ An emergency stop/override should remain available independently of AI decisions
 
 
 
-##MongoDB Database
+## MongoDB Database
 
 MongoDB is used to store rover telemetry, alerts, missions and commands.
 
@@ -419,7 +419,7 @@ Project
 ```
 
 
-##Latest 15 Telemetry Readings
+## Latest 15 Telemetry Readings
 
 A separate telemetry_latest collection maintains only the latest 15 telemetry readings for fast dashboard visualization.
 
@@ -450,7 +450,7 @@ This allows the dashboard to work with a small recent-data window without losing
 
 
 
-##Real-Time Dashboard
+## Real-Time Dashboard
 
 The dashboard provides the rescue operator with a centralized view of the rover.
 
@@ -499,7 +499,7 @@ Emergency stop
 ```
 
 
-##Project Structure
+## Project Structure
 ```text
 SIH-main/
 │
