@@ -150,8 +150,6 @@ low light Camera / Sensor
           ↓
    low light Processing
           ↓
-Possible Human Heat Signature
-          ↓
     Rescue Operator
 
 
