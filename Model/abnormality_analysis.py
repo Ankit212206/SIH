@@ -19,7 +19,7 @@ class MineHazardDetector:
 
     def __init__(self, model_path, scaler_path, threshold_path, window_size=15):
         self.window_size = window_size
-        self.sensor_names = ["CO2", "Dust", "Temperature", "Humidity"]
+        self.sensor_names = ["gas", "dust", "temp", "humid"]
         self.buffer = collections.deque(maxlen=window_size)
 
         # Load artifacts

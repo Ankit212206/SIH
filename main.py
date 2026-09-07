@@ -29,9 +29,9 @@ clahe = cv2.createCLAHE(clipLimit=2.5, tileGridSize=(8, 8))
 
 print("Loading Hazard Detector...")
 hazard_detector = MineHazardDetector(
-    model_path="Model/model.keras.zip",
-    scaler_path="Model/scaler.joblib",
-    threshold_path="Model/threshold.joblib",
+    model_path="Model/model (1).keras.zip",
+    scaler_path="Model/scaler (1).joblib",
+    threshold_path="Model/threshold (1).joblib",
     window_size=15
 )
 
@@ -126,7 +126,7 @@ def get_data():
             gas = doc.get('gas', 30)
             dust = doc.get('dust', 650)
             
-            reading = [gas+730, dust, temp, humid]
+            reading = [gas, dust, temp, humid]
             hazard_result = hazard_detector.process_reading(reading)
             
         latest_doc['persons'] = current_detections['persons']
