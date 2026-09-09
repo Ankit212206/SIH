@@ -1,11 +1,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap');
 
+*{
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+html, body {
+    margin:0;
+    padding:0;
+}
 body { 
-    background-color: #050914; 
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #000814, #001427); 
     font-family: 'Share Tech Mono', monospace;
     color: #00ffcc; 
     margin: 0;
     padding: 20px;
+    background-size:cover;
+    background-attachment: fixed;
 }
 
 .rover-container { max-width: 1400px; margin: 0 auto; }
@@ -77,4 +89,64 @@ body {
 .crosshair::before { content: ''; position: absolute; top: 19px; left: -20px; width: 80px; height: 1px; background: rgba(0, 255, 204, 0.3); }
 .crosshair::after { content: ''; position: absolute; left: 19px; top: -20px; height: 80px; width: 1px; background: rgba(0, 255, 204, 0.3); }
 
+#outer{
+    display:grid;
+    grid-template-columns: repeat(4,1fr);
+    grid-template-rows: auto;
+    border:2px solid #f4d58d;
+    column-gap:15px;
+    border-radius:20px;
+    padding:15px;
+}
+.vid-logs{
+    grid-column: span 2;
+}
+.apss{
+    display:flex;
+    flex-direction:column;
+    justify-content:stretch;
+    align-items:stretch;
+    gap:10px;
+
+}
+#anomalies{
+    height: 300px;
+}
+#logs {
+    margin-top: 12px;
+}
+#person{
+    height: 200px;
+}
+#current-data-output{
+    font-weight:bold;
+    font-size:1.1rem;
+
+}
+.butt{
+    border:2px solid rgb(0, 77, 0);
+    border-radius:10px;
+    height: 40px;
+    background-color:green;
+    text-transform:uppercase;
+    font-weight:bold;
+    font-size:20px;
+    font-family: 'Share Tech Mono', monospace;
+}
+.butt:hover{
+    background-color:rgb(0, 138, 117);
+    transform: scale(1.05);
+    transition:0.3s;
+}
+#terminal-output {
+    height: 220px;
+    overflow-y: auto;
+    margin-top: 8px;
+    padding: 12px;
+    border: 1px solid rgba(0, 255, 204, 0.4);
+    background: #050914;
+    color: #00ffcc;
+    font: 0.85rem/1.45 'Share Tech Mono', monospace;
+    white-space: pre-wrap;
+}
 @keyframes blink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: 0; } }
