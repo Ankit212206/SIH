@@ -1,75 +1,223 @@
+let dataPollingTimer = null;
+let controlRequestInProgress = false;
+
+
+function updateTerminalLogs(logs) {
+    const terminalOutput = document.getElementById('terminal-output');
+    if (!terminalOutput || !Array.isArray(logs)) return;
+
+    terminalOutput.textContent = logs.join('\n');
+    terminalOutput.scrollTop = terminalOutput.scrollHeight;
+}
+
+
+function updateAnomalyStatus(data) {
+    const anomalyStatus = document.getElementById('anomaly-status');
+    if (!anomalyStatus) return;
+
+    const anomalies = Array.isArray(data.anomalies)
+        ? data.anomalies.filter((anomaly) => typeof anomaly === 'string' && anomaly.trim())
+        : [];
+
+    if (data.running === false) {
+        anomalyStatus.textContent = 'System stopped.';
+        anomalyStatus.style.color = '#8faebf';
+    } else if (data.hazard_status === 'HAZARD') {
+        anomalyStatus.textContent = anomalies.length
+            ? anomalies.join(' | ')
+            : 'Hazard detected. No sensor details were provided.';
+        anomalyStatus.style.color = '#ff3333';
+    } else if (data.hazard_status === 'SAFE') {
+        anomalyStatus.textContent = 'No anomalies detected.';
+        anomalyStatus.style.color = '#00ffcc';
+    } else {
+        anomalyStatus.textContent = 'Collecting readings...';
+        anomalyStatus.style.color = '#ffaa00';
+    }
+}
+
+
+function updatePersonDetection(data) {
+    const personOutput = document.getElementById('person-detected');
+    if (!personOutput) return;
+
+    if (data.running === false) {
+        personOutput.textContent = 'System stopped.';
+        personOutput.style.color = '#8faebf';
+        return;
+    }
+
+    const personDetected = Number(data.persons) > 0 || Number(data.miners) > 0;
+    if (personDetected) {
+        personOutput.textContent = '[!] PERSON DETECTED';
+        personOutput.style.color = '#00ff00';
+
+        if ('speechSynthesis' in window && !window.speechSynthesis.speaking) {
+            const speech = new SpeechSynthesisUtterance('Person detected');
+            speech.rate = 1.1;
+            speech.pitch = 1.0;
+            window.speechSynthesis.speak(speech);
+        }
+    } else {
+        personOutput.textContent = '[STANDBY] No targets detected in frame.';
+        personOutput.style.color = '#8faebf';
+    }
+}
+
+
+function updateCurrentData(data) {
+    const output = document.getElementById('current-data-output');
+    if (!output) return;
+
+    if (data.running === false) {
+        output.textContent = 'System stopped. \n Press Start to load the latest MongoDB record.';
+        return;
+    }
+
+    if (data.error) {
+        output.textContent = data.error;
+        return;
+    }
+
+    const readings = [
+        ['Record', data._id],
+        ['Timestamp', data.timestamp],
+        ['Temperature', data.temp ?? data.Temp],
+        ['Humidity', data.humid ?? data.Humid],
+        ['Gas', data.gas],
+        ['Dust', data.dust]
+    ].filter(([, value]) => value !== undefined && value !== null);
+
+    output.textContent = readings
+        .map(([label, value]) => `${label}: ${value}`)
+        .join('\n');
+}
+
+
+function setControlState(running, busy = false) {
+    const startButton = document.getElementById('start-butt');
+    const stopButton = document.getElementById('stop-butt');
+
+    if (startButton) startButton.disabled = busy || running;
+    if (stopButton) stopButton.disabled = busy || !running;
+}
+
+
+function setCameraStream(active) {
+    const cameraStream = document.getElementById('camera-stream');
+    if (!cameraStream) return;
+
+    if (active) {
+        // A unique query value forces the browser to start a fresh MJPEG stream.
+        cameraStream.src = `/video-feed?started=${Date.now()}`;
+    } else {
+        cameraStream.removeAttribute('src');
+    }
+}
+
+
 async function fetchDatabaseData() {
     try {
         const response = await fetch('/api/data');
         const data = await response.json();
-        
-        if (!data || data.error) return;
+        if (!data || typeof data !== 'object') return;
 
-        // Environmental Telemetry
-        if (data.temp !== undefined || data.Temp !== undefined) {
-            document.getElementById('temp-val').innerText = data.temp !== undefined ? data.temp : data.Temp;
-        }
-        if (data.Humid !== undefined || data.humid !== undefined) {
-            document.getElementById('humi-val').innerText = data.humid !== undefined ? data.humid : data.humid;
-        }
-        if (data.gas !== undefined) {
-            document.getElementById('gas-val').innerText = data.gas;
-        }
-        if (data.dust !== undefined) {
-            document.getElementById('dust-val').innerText = data.dust;
-        }
-        
-        // NEW: AI Environmental Diagnostics (Bottom Left)
-        const hazardStatus = document.getElementById('hazard-status');
-        const hazardAnomalies = document.getElementById('hazard-anomalies');
-        
-        if (data.hazard_status === "HAZARD") {
-            hazardStatus.innerText = "🚨 [HAZARD DETECTED]";
-            hazardStatus.style.color = "#ff3333";
-            hazardStatus.style.textShadow = "0 0 8px #ff3333";
-            
-            if (data.anomalies && data.anomalies.length > 0) {
-                // Creates a bulleted list of all detected anomalies
-                hazardAnomalies.innerHTML = "- " + data.anomalies.join("<br>- ");
-                hazardAnomalies.style.display = "block";
-            }
-        } else if (data.hazard_status === "SAFE") {
-            hazardStatus.innerText = "✅ [SYSTEM SAFE]";
-            hazardStatus.style.color = "#00ff00";
-            hazardStatus.style.textShadow = "0 0 5px #00ff00";
-            hazardAnomalies.style.display = "none";
-        } else {
-            hazardStatus.innerText = "⏳ [WARMING UP]";
-            hazardStatus.style.color = "#ffaa00";
-            hazardStatus.style.textShadow = "none";
-            hazardAnomalies.style.display = "none";
+        updateTerminalLogs(data.logs);
+        updateAnomalyStatus(data);
+        updatePersonDetection(data);
+        updateCurrentData(data);
+
+        if (data.running === false) {
+            stopDataPolling();
+            setCameraStream(false);
+            setControlState(false);
         }
 
-        // Vision Tracking Logic (Bottom Right)
-        let visionText = "";
-        
-        if (data.persons > 0 || data.miners > 0) {
-            visionText += "<div style='color: #00ff00; margin-bottom: 5px; text-shadow: 0 0 5px #00ff00;'>[!] PERSON DETECTED</div>";
-            // Repeat while the person remains in frame, without queueing audio.
-            if (!window.speechSynthesis.speaking) {
-                let speech = new SpeechSynthesisUtterance("Person detected");
-                speech.rate = 1.1; 
-                speech.pitch = 1.0;
-                window.speechSynthesis.speak(speech);
-            }
+        if (!response.ok && !data.logs) {
+            console.warn(data.error || 'Unable to fetch MongoDB data.');
         }
-        
-        const visionOutput = document.getElementById('vision-output');
-        if (visionText === "") {
-            visionOutput.innerHTML = "<span style='color: #8faebf;'>[STANDBY] No targets detected in frame.</span>";
-        } else {
-            visionOutput.innerHTML = visionText;
-        }
-        
     } catch (error) {
-        console.error("Error fetching data:", error);
+        console.error('Error fetching dashboard data:', error);
     }
 }
 
-setInterval(fetchDatabaseData, 1000); 
-fetchDatabaseData();
+
+function startDataPolling() {
+    if (dataPollingTimer !== null) return;
+
+    fetchDatabaseData();
+    dataPollingTimer = window.setInterval(fetchDatabaseData, 1000);
+}
+
+
+function stopDataPolling() {
+    if (dataPollingTimer === null) return;
+
+    window.clearInterval(dataPollingTimer);
+    dataPollingTimer = null;
+}
+
+
+async function startSystem() {
+    if (controlRequestInProgress) return;
+
+    controlRequestInProgress = true;
+    setControlState(false, true);
+
+    try {
+        const response = await fetch('/api/start', { method: 'POST' });
+        const data = await response.json();
+        updateTerminalLogs(data.logs);
+
+        if (!response.ok || !data.running) {
+            throw new Error(data.message || 'The system could not be started.');
+        }
+
+        setCameraStream(true);
+        setControlState(true);
+        startDataPolling();
+    } catch (error) {
+        console.error('Error starting system:', error);
+        updateAnomalyStatus({ hazard_status: 'WARMING UP' });
+        setControlState(false);
+    } finally {
+        controlRequestInProgress = false;
+    }
+}
+
+
+async function stopSystem() {
+    if (controlRequestInProgress) return;
+
+    controlRequestInProgress = true;
+    setControlState(true, true);
+
+    try {
+        const response = await fetch('/api/stop', { method: 'POST' });
+        const data = await response.json();
+        updateTerminalLogs(data.logs);
+
+        if (!response.ok || data.running) {
+            throw new Error(data.message || 'The system could not be stopped.');
+        }
+
+        stopDataPolling();
+        setCameraStream(false);
+        updateAnomalyStatus(data);
+        updatePersonDetection(data);
+        updateCurrentData(data);
+        setControlState(false);
+    } catch (error) {
+        console.error('Error stopping system:', error);
+        // Keep the controls in the running state because the server may still
+        // own the camera and be processing data.
+        setControlState(true);
+    } finally {
+        controlRequestInProgress = false;
+    }
+}
+
+
+document.getElementById('start-butt')?.addEventListener('click', startSystem);
+document.getElementById('stop-butt')?.addEventListener('click', stopSystem);
+setControlState(false);
