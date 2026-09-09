@@ -115,7 +115,7 @@ class MineHazardDetector:
         # 7. Hazard Reporting
         if anomalies:
             culprits = " & ".join(anomalies)
-            print(f"🚨 HAZARD DETECTED! MSE: {residual:.4f} | Cause: {culprits}")
+            print(f" --> HAZARD DETECTED! MSE: {residual:.4f} | Cause: {culprits}")
             return {
                 "status": "HAZARD",
                 "mse": residual,
@@ -123,7 +123,7 @@ class MineHazardDetector:
                 "raw_reading": raw_sensor_reading,
             }
 
-        print(f"✅ Safe. MSE: {residual:.4f}")
+        print(f" --> Safe. MSE: {residual:.4f}")
         return {"status": "SAFE", "mse": residual}
 
 
