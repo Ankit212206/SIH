@@ -1,5 +1,11 @@
 let dataPollingTimer = null;
 let controlRequestInProgress = false;
+const chartSeries = [
+    { key: 'temp', label: 'Temperature', color: '#ff9f43', aliases: ['temp', 'Temp'] },
+    { key: 'humid', label: 'Humidity', color: '#38bdf8', aliases: ['humid', 'Humid'] },
+    { key: 'gas', label: 'Gas', color: '#ef5da8', aliases: ['gas'] },
+    { key: 'dust', label: 'Dust', color: '#a3e635', aliases: ['dust'] }
+];
 
 
 function updateTerminalLogs(logs) {
@@ -94,6 +100,93 @@ function updateCurrentData(data) {
 }
 
 
+function sensorValue(reading, aliases) {
+    const value = aliases.map((key) => reading[key]).find((item) => item !== undefined && item !== null);
+    const numeric = Number(value);
+    return Number.isFinite(numeric) ? numeric : null;
+}
+
+
+function updateTelemetryChart(history, running = true) {
+    const chart = document.getElementById('telemetry-chart');
+    const emptyMessage = document.getElementById('telemetry-chart-empty');
+    if (!chart || !emptyMessage) return;
+
+    const readings = Array.isArray(history) ? history : [];
+    const points = chartSeries.map((series) => ({
+        ...series,
+        values: readings.map((reading) => sensorValue(reading, series.aliases))
+    }));
+    const hasData = points.some((series) => series.values.some((value) => value !== null));
+
+    if (!running || !hasData) {
+        chart.replaceChildren();
+        chart.hidden = true;
+        emptyMessage.hidden = false;
+        emptyMessage.textContent = running ? 'Waiting for sensor readings…' : 'Start the system to view live trends.';
+        return;
+    }
+
+    chart.hidden = false;
+    emptyMessage.hidden = true;
+    const width = 360, height = 180, padding = 24;
+    const allValues = points.flatMap((series) => series.values.filter((value) => value !== null));
+    let min = Math.min(...allValues), max = Math.max(...allValues);
+    if (min === max) { min -= 1; max += 1; }
+    const x = (index) => padding + (index * (width - padding * 2)) / Math.max(readings.length - 1, 1);
+    const y = (value) => height - padding - ((value - min) * (height - padding * 2)) / (max - min);
+    const namespace = 'http://www.w3.org/2000/svg';
+    chart.replaceChildren();
+
+    [0, 0.25, 0.5, 0.75, 1].forEach((position) => {
+        const line = document.createElementNS(namespace, 'line');
+        const lineY = padding + position * (height - padding * 2);
+        line.setAttribute('x1', padding); line.setAttribute('x2', width - padding);
+        line.setAttribute('y1', lineY); line.setAttribute('y2', lineY);
+        line.setAttribute('class', 'chart-grid-line');
+        chart.append(line);
+    });
+
+    const verticalGridLines = Math.min(Math.max(readings.length - 1, 1), 6);
+    for (let index = 0; index <= verticalGridLines; index += 1) {
+        const line = document.createElementNS(namespace, 'line');
+        const lineX = padding + (index * (width - padding * 2)) / verticalGridLines;
+        line.setAttribute('x1', lineX); line.setAttribute('x2', lineX);
+        line.setAttribute('y1', padding); line.setAttribute('y2', height - padding);
+        line.setAttribute('class', 'chart-grid-line');
+        chart.append(line);
+    }
+
+    points.forEach((series) => {
+        const validPoints = series.values
+            .map((value, index) => value === null ? null : { x: x(index), y: y(value) })
+            .filter(Boolean);
+        if (!validPoints.length) return;
+
+        let pathData = `M ${validPoints[0].x} ${validPoints[0].y}`;
+        for (let index = 1; index < validPoints.length; index += 1) {
+            const previous = validPoints[index - 1];
+            const point = validPoints[index];
+            const midpointX = (previous.x + point.x) / 2;
+            // Quadratic curves retain the actual reading points while removing sharp corners.
+            pathData += ` Q ${previous.x} ${previous.y} ${midpointX} ${(previous.y + point.y) / 2}`;
+        }
+        if (validPoints.length > 1) {
+            const previous = validPoints[validPoints.length - 2];
+            const point = validPoints[validPoints.length - 1];
+            pathData += ` Q ${previous.x} ${previous.y} ${point.x} ${point.y}`;
+        }
+        if (!pathData) return;
+        const path = document.createElementNS(namespace, 'path');
+        path.setAttribute('d', pathData);
+        path.setAttribute('stroke', series.color);
+        path.setAttribute('class', 'chart-line');
+        path.setAttribute('aria-label', series.label);
+        chart.append(path);
+    });
+}
+
+
 function setControlState(running, busy = false) {
     const startButton = document.getElementById('start-butt');
     const stopButton = document.getElementById('stop-butt');
@@ -126,6 +219,7 @@ async function fetchDatabaseData() {
         updateAnomalyStatus(data);
         updatePersonDetection(data);
         updateCurrentData(data);
+        updateTelemetryChart(data.history, data.running);
 
         if (data.running === false) {
             stopDataPolling();
@@ -206,6 +300,7 @@ async function stopSystem() {
         updateAnomalyStatus(data);
         updatePersonDetection(data);
         updateCurrentData(data);
+        updateTelemetryChart([], false);
         setControlState(false);
     } catch (error) {
         console.error('Error stopping system:', error);

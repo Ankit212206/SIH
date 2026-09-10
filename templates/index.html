@@ -35,6 +35,12 @@
             <h2>Current Receiving Data</h2>
             <pre id="current-data-output">System stopped. 
 Press Start to load the latest MongoDB record.</pre>
+            <section id="telemetry-graphs" aria-labelledby="telemetry-graphs-title">
+                <h3 id="telemetry-graphs-title">Recent sensor trends</h3>
+                <p class="graph-key"><span class="temperature-key">Temperature</span><span class="humidity-key">Humidity</span><span class="gas-key">Gas</span><span class="dust-key">Dust</span></p>
+                <svg id="telemetry-chart" viewBox="0 0 360 180" role="img" aria-label="Recent sensor readings graph"></svg>
+                <p id="telemetry-chart-empty">Waiting for sensor readings…</p>
+            </section>
         </div>
     </div>
     <script src="/static/script.js"></script>

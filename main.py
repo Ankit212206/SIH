@@ -378,6 +378,15 @@ def get_data():
             }), 404
 
         latest_document = documents[-1].copy()
+        history = []
+        for document in documents:
+            history.append({
+                "timestamp": document.get("timestamp"),
+                "temp": document.get("temp", document.get("Temp")),
+                "humid": document.get("humid", document.get("Humid")),
+                "gas": document.get("gas"),
+                "dust": document.get("dust"),
+            })
         hazard_result = update_hazard_result(documents)
         latest_document["_id"] = str(latest_document["_id"])
 
@@ -393,6 +402,7 @@ def get_data():
             latest_document["anomalies"] = []
 
         latest_document["running"] = True
+        latest_document["history"] = history
         latest_document["logs"] = get_terminal_logs()
         return jsonify(latest_document)
     except Exception as error:

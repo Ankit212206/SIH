@@ -123,6 +123,50 @@ body {
     font-size:1.1rem;
 
 }
+#telemetry-graphs {
+    margin-top: 18px;
+    padding-top: 14px;
+    border-top: 1px solid rgba(244, 213, 141, 0.45);
+}
+#telemetry-graphs h3 { font-size: 1rem; text-transform: uppercase; }
+.graph-key { 
+    display: flex; 
+    flex-wrap: wrap; 
+    gap: 8px; 
+    margin: 8px 0; 
+    font-size: 0.75rem; 
+}
+.graph-key span::before { 
+    content: '● '; 
+}
+.temperature-key { 
+    color: #ff9f43; }.humidity-key { color: #38bdf8; }
+.gas-key { 
+    color: #ef5da8; }.dust-key { color: #a3e635; }
+#telemetry-chart { 
+    display: block; 
+    width: 100%; 
+    min-height: 160px; 
+    background: #050914; 
+    border: 1px solid rgba(0, 255, 204, 0.3); 
+}
+#telemetry-chart-empty { 
+    color: #8faebf; 
+    font-size: 0.85rem; 
+    margin-top: 12px; 
+}
+.chart-grid-line { 
+    stroke: rgba(0, 255, 204, 0.22);
+    stroke-width: 1; 
+    stroke-dasharray: 2 3; 
+}
+.chart-line { 
+    fill: none; 
+    stroke-width: 2.75; 
+    stroke-linejoin: round; 
+    stroke-linecap: round; 
+    filter: drop-shadow(0 0 2px currentColor); 
+}
 .butt{
     border:2px solid rgb(0, 77, 0);
     border-radius:10px;
