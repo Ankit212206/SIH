@@ -1,9 +1,9 @@
 let dataPollingTimer = null;
 let controlRequestInProgress = false;
 const chartSeries = [
-    { key: 'temp', label: 'Temperature', color: '#ff9f43', aliases: ['temp', 'Temp'] },
-    { key: 'humid', label: 'Humidity', color: '#38bdf8', aliases: ['humid', 'Humid'] },
-    { key: 'gas', label: 'Gas', color: '#ef5da8', aliases: ['gas'] },
+    { key: 'temperature_c', label: 'Temperature', color: '#ff9f43', aliases: ['temperature_c', 'temp', 'Temp'] },
+    { key: 'humidity_pct', label: 'Humidity', color: '#38bdf8', aliases: ['humidity_pct', 'humid', 'Humid'] },
+    { key: 'gas_level_ppm', label: 'Gas', color: '#ef5da8', aliases: ['gas_level_ppm', 'gas'] },
     { key: 'dust', label: 'Dust', color: '#a3e635', aliases: ['dust'] }
 ];
 
@@ -85,13 +85,23 @@ function updateCurrentData(data) {
         return;
     }
 
+    const imu = data.imu || {};
+    const lidar = Array.isArray(data.lidar_scan) ? data.lidar_scan : [];
+    const lidarSummary = lidar.length
+        ? lidar.map((scan) => `${scan.angle_deg}\u00b0: ${scan.dist_mm} mm`).join(' | ')
+        : null;
     const readings = [
         ['Record', data._id],
         ['Timestamp', data.timestamp],
-        ['Temperature', data.temp ?? data.Temp],
-        ['Humidity', data.humid ?? data.Humid],
-        ['Gas', data.gas],
-        ['Dust', data.dust]
+        ['Temperature', data.temperature_c ?? data.temp ?? data.Temp],
+        ['Humidity', data.humidity_pct ?? data.humid ?? data.Humid],
+        ['Gas level', data.gas_level_ppm ?? data.gas],
+        ['Dust', data.dust],
+        ['Motion detected', data.motion_detected],
+        ['IMU acceleration X', imu.accel_x],
+        ['IMU acceleration Y', imu.accel_y],
+        ['IMU acceleration Z', imu.accel_z],
+        ['LiDAR scan', lidarSummary]
     ].filter(([, value]) => value !== undefined && value !== null);
 
     output.textContent = readings
@@ -130,11 +140,7 @@ function updateTelemetryChart(history, running = true) {
     chart.hidden = false;
     emptyMessage.hidden = true;
     const width = 360, height = 180, padding = 24;
-    const allValues = points.flatMap((series) => series.values.filter((value) => value !== null));
-    let min = Math.min(...allValues), max = Math.max(...allValues);
-    if (min === max) { min -= 1; max += 1; }
     const x = (index) => padding + (index * (width - padding * 2)) / Math.max(readings.length - 1, 1);
-    const y = (value) => height - padding - ((value - min) * (height - padding * 2)) / (max - min);
     const namespace = 'http://www.w3.org/2000/svg';
     chart.replaceChildren();
 
@@ -158,6 +164,15 @@ function updateTelemetryChart(history, running = true) {
     }
 
     points.forEach((series) => {
+        // Temperature, humidity, gas and dust use different units and ranges.
+        // Scale each independently so every sensor has a visible colored line.
+        const seriesValues = series.values.filter((value) => value !== null);
+        if (!seriesValues.length) return;
+        let min = Math.min(...seriesValues);
+        let max = Math.max(...seriesValues);
+        if (min === max) { min -= 1; max += 1; }
+        const y = (value) => height - padding
+            - ((value - min) * (height - padding * 2)) / (max - min);
         const validPoints = series.values
             .map((value, index) => value === null ? null : { x: x(index), y: y(value) })
             .filter(Boolean);
