@@ -32,8 +32,6 @@ def prepare_existing_timestamps():
         try:
             sortable_timestamp = timestamp_as_utc(item["timestamp"])
         except (KeyError, TypeError, ValueError, OverflowError):
-            # A record with no usable timestamp cannot be considered newer than
-            # a timestamped record, so it is intentionally pruned first.
             sortable_timestamp = datetime(1970, 1, 1, tzinfo=timezone.utc)
         col.update_one({"_id": item["_id"]}, {"$set": {"timestamp_sort": sortable_timestamp}})
 
@@ -54,7 +52,6 @@ def trim_collection():
 
 
 def insert_and_trim(document):
-    """Store a document, retaining only the newest MAX_DOCUMENTS by timestamp."""
     if "timestamp" not in document:
         raise ValueError("Received document does not contain a timestamp")
 
